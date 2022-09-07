@@ -2,8 +2,24 @@ all: zxedit.tap
 
 #zcc +zx -lesxdos -DAMALLOC1 -create-app -zorg=49152 -Cz--merge -Czzxedit.tap zxedit.c
 
-zxedit.tap: zxedit2.bas
-	./zmakebas -a 10 -n zxedit -o zxedit.tap zxedit2.bas
+zxedit.tap: zxedit plus3.bin esxdos.bin residos.bin
+	sh -c "(echo zxedit.tap > archived.txt) && (ls zxedit >> archived.txt) && (ls plus3.bin >> archived.txt) && (ls residos.bin >> archived.txt) && (ls esxdos.bin >> archived.txt) && (echo "" >> archived.txt) && (cat archived.txt | ./archiver)"
+	rm archived.txt
+
+plus3.bin: zxedit.c
+	zcc +zx -lp3 -DAMALLOC1 -zorg=49152 zxedit.c
+	z88dk-appmake +zx --dos --org 49152 --binfile a.bin --output plus3.bin
+
+residos.bin: zxedit.c
+	zcc +zx -DRESIDOS -lp3 -DAMALLOC1 -zorg=49152 zxedit.c
+	z88dk-appmake +zx --dos --org 49152 --binfile a.bin --output residos.bin
+
+esxdos.bin: zxedit.c
+	zcc +zx -lesxdos -DAMALLOC1 -zorg=49152 zxedit.c
+	z88dk-appmake +zx --dos --org 49152 --binfile a.bin --output esxdos.bin
+
+zxedit: zxedit2.bas
+	./zmakebas -a 10 -n zxedit -p -o zxedit zxedit2.bas
 
 zxedit2.bin: zxedit2.asm
 	z88dk-z80asm -b zxedit2.asm
@@ -17,4 +33,4 @@ zxedit2.bas: zxedit.bin zxedit.bas
 	cat zxedit.bas >> zxedit2.bas 
 
 clean:
-	rm -f zxedit2.bas zxedit.tap *.bin *.o *.inc *.map
+	rm -f zxedit2.bas zxedit.tap zxedit *.bin *.o *.inc *.map
