@@ -7,6 +7,37 @@
 #ifdef __CC65__
   #include <unistd.h>
   #define getch cgetc
+
+  void changeDrive(char* filename) {
+    char * temp;
+    char temp2 = 0;
+
+    /* if a comma then a valid drive number appears after the file name then change to that drive */
+    if((temp = strchr(filename, ',')) != NULL) {
+      *temp = '\0';
+      temp++;
+
+      if(isdigit(temp[0])) {
+        temp2 = temp[0] - '0';
+
+        if(temp[1]) {
+          if(isdigit(temp[1]) && !temp[2]) {
+            temp2 = (((temp2 << 2) + temp2) << 1) + (temp[1] - '0');
+          }
+          else {
+            temp2 = 0;
+          }
+        }
+      }
+    }
+
+    /* use drive 8 by default */
+    if(temp2 < 9 || temp2 > 30) {
+      temp = "8";
+    }
+
+    chdir(temp);
+  }
 #endif
 
 int d_fgets(char** ws, FILE* stream) {
@@ -118,40 +149,6 @@ int d_fgets(char** ws, FILE* stream) {
   */
   return 0;
 }
-
-#ifdef __CC65__
-void changeDrive(char* filename) {
-  char * temp;
-  char temp2 = 0;
-
-  /* if a comma then a valid drive number appears after the file name then change to that drive */
-  if((temp = strchr(filename, ',')) != NULL) {
-    *temp = '\0';
-    temp++;
-
-    if(isdigit(temp[0])) {
-      temp2 = temp[0] - '0';
-
-      if(temp[1]) {
-        if(isdigit(temp[1]) && !temp[2]) {
-          temp2 = (((temp2 << 2) + temp2) << 1) + (temp[1] - '0');
-        }
-        else {
-          temp2 = 0;
-        }
-      }
-    }
-  }
-
-  /* use drive 8 by default */
-  if(temp2 < 9 || temp2 > 30) {
-    temp = "8";
-  }
-
-  chdir(temp);
-}
-#endif
-
 
 void main(void) {
   char * textLine = NULL;
