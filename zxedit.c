@@ -6,6 +6,7 @@
 
 #ifdef __CC65__
   #include <unistd.h>
+  #include <cbm.h>
   #define getch cgetc
 
   void changeDrive(char* filename) {
@@ -38,6 +39,79 @@
 
     chdir(temp);
   }
+
+  /* cc65's fgets does whitespace trimming on the c64, so isn't really usable for us. so we use cgetc in a loop and build a line buffer ourselves */
+  int d_fgets2(char** ws, FILE* stream) {
+    unsigned char buf[81];
+    int c, d;
+    int currentIndex = 0;
+    int maxIndex = 0;
+
+    memset(buf, 0, 81);
+
+    do {
+      c = cgetc();
+
+      switch(c) {
+        case 145: /* up */
+        case 17: {  /* down */
+          /* do nothing */
+        } break;
+
+        case 157: { /* left */
+          if(currentIndex) {
+            --currentIndex;
+            printf("%c", c);
+          }
+        } break;
+
+        case 20: { /* backspace */
+          if(currentIndex) {
+            --currentIndex;
+            printf("%c", 157);
+          }
+        } break;
+
+        case 29: {  /* right */
+          if(currentIndex < maxIndex) {
+            ++currentIndex;
+            printf("%c", c);
+          }
+        } break;
+
+        case 13: { /* enter */
+          if(*ws) {
+            free(*ws);
+          }
+
+          *ws = strdup(buf);
+
+          printf("%c", c);
+          return 1;
+        } break;
+
+        default: {
+          if(c > 31 && c < 127) {
+            if(currentIndex < 80) {
+              buf[currentIndex] = c;
+              printf("%c", c);
+
+              ++currentIndex;
+
+              if(currentIndex > maxIndex) {
+                maxIndex = currentIndex;
+              }
+
+            }
+          }
+          else {
+            printf("%d", c);
+          }
+        } break;
+      }
+
+    } while(1);
+  }
 #endif
 
 int d_fgets(char** ws, FILE* stream) {
@@ -52,6 +126,12 @@ int d_fgets(char** ws, FILE* stream) {
   if(ws == NULL) {
     return 0;
   }
+
+  #ifdef __CC65__
+    if(stream == stdin) {
+      return d_fgets2(ws, stream);
+    }
+  #endif
 
   /* try reading some text from the file into the buffer */
   while(fgets((char *)&(buf[0]), 80, stream) != NULL) {
@@ -166,6 +246,10 @@ void main(void) {
     switch(getch()) {
       case 'w':
       case 'W': {
+        #ifdef __CC65__
+          kbrepeat(KBREPEAT_NONE);
+        #endif
+
         fputs("filename to write to?\n", stdout);
 
         d_fgets(&textLine, stdin);
@@ -183,7 +267,7 @@ void main(void) {
         fputs(
           "\n"
           "enter lines now.\n"
-          "the first character is ignored.\n"
+          "first character is ignored.\n"
           "enter empty string to finish.\n",
           stdout
         );
@@ -208,6 +292,10 @@ void main(void) {
 
       case 'r':
       case 'R': {
+        #ifdef __CC65__
+          kbrepeat(KBREPEAT_NONE);
+        #endif
+
         fputs("filename to read from?\n", stdout);
 
         d_fgets(&textLine, stdin);
@@ -225,20 +313,28 @@ void main(void) {
         do {
           c = d_fgets(&textLine, readFrom);
 
-          if(c != 0) {
-            printf("%s\n", textLine);
-          }
+          switch(c) {
+            case 1:
+              printf("%s\n", textLine);
+            break;
 
-          if(c != 1) {
-            free(textLine);
-            fclose(readFrom);
-            return;
+            case 2:
+              printf("%s", textLine);
+
+            default:
+              free(textLine);
+              fclose(readFrom);
+              return;
           }
         } while(1);
       } break;
 
       case 'd':
       case 'D': {
+        #ifdef __CC65__
+          kbrepeat(KBREPEAT_NONE);
+        #endif
+
         fputs("filename to delete?\n", stdout);
 
         d_fgets(&textLine, stdin);

@@ -1,4 +1,7 @@
-all: zxedit.tap zxedit.com zxedit.prg
+all: zxedit.tap zxedit.com zxedit.d64
+
+zxedit.d64: zxedit.prg
+	c1541 -format diskname,id d64 zxedit.d64 -attach zxedit.d64 -write zxedit.prg zxedit
 
 zxedit.com: zxedit.c
 	zcc +cpm -DAMALLOC1 -o zxedit.com zxedit.c
@@ -34,7 +37,7 @@ zxedit.bin: zxedit2.bin zxedit.asm
 zxedit2.bas: zxedit.bin zxedit.bas
 	printf '1 REM' > zxedit2.bas
 	xxd -ps -u -c 100000 zxedit.bin | sed -e "s/\(..\)/\\\{0x\1\}/g" >> zxedit2.bas
-	cat zxedit.bas >> zxedit2.bas 
+	cat zxedit.bas >> zxedit2.bas
 
 clean:
-	rm -f zxedit2.bas zxedit.tap zxedit.com zxedit.prg zxedit *.bin *.o *.inc *.map
+	rm -f zxedit2.bas zxedit.tap zxedit.com zxedit.prg zxedit.prg zxedit.d64 zxedit *.bin *.o *.inc *.map
