@@ -67,8 +67,16 @@
 
         case 20: { /* backspace */
           if(currentIndex) {
+            if(currentIndex != maxIndex) {
+              memmove(&(buf[currentIndex-1]), &(buf[currentIndex]), maxIndex-currentIndex+1);
+            }
+            else {
+              buf[maxIndex] = 0;
+            }
+
+            --maxIndex;
             --currentIndex;
-            printf("%c", 157);
+            printf("%c", 20);
           }
         } break;
 
@@ -91,22 +99,43 @@
         } break;
 
         default: {
+          /*
+            remap uppercase scancodes to upper case petscii
+            A-Z = 193-218 should be 97...
+          */
+          if(c> 192 && c < 219) {
+            c -= 96;
+          }
+
           if(c > 31 && c < 127) {
-            if(currentIndex < 80) {
-              buf[currentIndex] = c;
-              printf("%c", c);
+            if(currentIndex != maxIndex) {
+              if(maxIndex < 80) {
+                memmove(&(buf[currentIndex+1]), &(buf[currentIndex]), maxIndex-currentIndex);
+                ++maxIndex;
 
-              ++currentIndex;
-
-              if(currentIndex > maxIndex) {
-                maxIndex = currentIndex;
+                buf[currentIndex] = c;
+                printf("%c%c", 148, c);
+                ++currentIndex;
               }
+            }
+            else {
+              if(currentIndex < 80) {
+                buf[currentIndex] = c;
+                printf("%c", c);
 
+                ++currentIndex;
+
+                if(currentIndex > maxIndex) {
+                  maxIndex = currentIndex;
+                }
+              }
             }
           }
+          /*
           else {
             printf("%d", c);
           }
+          */
         } break;
       }
 
@@ -248,6 +277,7 @@ void main(void) {
       case 'W': {
         #ifdef __CC65__
           kbrepeat(KBREPEAT_NONE);
+          cursor(1);
         #endif
 
         fputs("filename to write to?\n", stdout);
@@ -265,10 +295,9 @@ void main(void) {
         }
 
         fputs(
-          "\n"
-          "enter lines now.\n"
-          "first character is ignored.\n"
-          "enter empty string to finish.\n",
+          "Enter lines now.\n"
+          "First character is ignored.\n"
+          "Enter empty string to finish.\n",
           stdout
         );
 
@@ -294,6 +323,7 @@ void main(void) {
       case 'R': {
         #ifdef __CC65__
           kbrepeat(KBREPEAT_NONE);
+          cursor(1);
         #endif
 
         fputs("filename to read from?\n", stdout);
@@ -333,6 +363,7 @@ void main(void) {
       case 'D': {
         #ifdef __CC65__
           kbrepeat(KBREPEAT_NONE);
+          cursor(1);
         #endif
 
         fputs("filename to delete?\n", stdout);
