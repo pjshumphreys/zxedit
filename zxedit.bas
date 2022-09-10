@@ -1,7 +1,7 @@
 10 CLEAR VAL "46000"
 20 LET A = USR VAL "\{0xBE}23635+256*\{0xBE}23636+7"
 30 IF A = 0 THEN PRINT "Either ESXDOS, ResiDOS v1.40+ or PLUS3DOS is required": STOP
-40 IF A = 1 THEN LOAD "plus3.bin" CODE : GOTO 70
-50 IF A > 3 THEN LOAD * "esxdos.bin" CODE : GOTO 70
-60 LOAD % "residos.bin" CODE
+40 IF A = 1 THEN LOAD "edplus3.bin" CODE : GOTO 70
+50 IF A > 3 THEN LOAD * "edesx.bin" CODE : GOTO 70
+60 LOAD % "edresi.bin" CODE
 70 RANDOMIZE USR VAL "49152"

@@ -1,58 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <conio.h>
 #include <ctype.h>
+#include <dirent.h>
+
+#define freeAndZero(p) { free(p); p = 0; }
 
 #ifdef __CC65__
   #include <unistd.h>
-  #include <cbm.h>
-  #define getch cgetc
-
-  void changeDrive(char* filename) {
-    char * temp;
-    char temp2 = 0;
-
-    /* if a comma then a valid drive number appears after the file name then change to that drive */
-    if((temp = strchr(filename, ',')) != NULL) {
-      *temp = '\0';
-      temp++;
-
-      if(isdigit(temp[0])) {
-        temp2 = temp[0] - '0';
-
-        if(temp[1]) {
-          if(isdigit(temp[1]) && !temp[2]) {
-            temp2 = (((temp2 << 2) + temp2) << 1) + (temp[1] - '0');
-          }
-          else {
-            temp2 = 0;
-          }
-        }
-      }
-    }
-
-    /* use drive 8 by default */
-    if(temp2 < 9 || temp2 > 30) {
-      temp = "8";
-    }
-
-    chdir(temp);
-  }
+  #include <conio.h>
 
   /* cc65's fgets does whitespace trimming on the c64, so isn't really usable for us. so we use cgetc in a loop and build a line buffer ourselves */
-  int d_fgets2(char** ws, FILE* stream) {
+  int d_fgets2(char** ws) {
     unsigned char buf[81];
-    int c, d;
+    int c;
     int currentIndex = 0;
     int maxIndex = 0;
 
     memset(buf, 0, 81);
 
     do {
-      c = cgetc();
-
-      switch(c) {
+      switch((c = cgetc())) {
         case 145: /* up */
         case 17: {  /* down */
           /* do nothing */
@@ -61,7 +29,8 @@
         case 157: { /* left */
           if(currentIndex) {
             --currentIndex;
-            printf("%c", c);
+
+            printf("%c", 157);
           }
         } break;
 
@@ -69,13 +38,17 @@
           if(currentIndex) {
             if(currentIndex != maxIndex) {
               memmove(&(buf[currentIndex-1]), &(buf[currentIndex]), maxIndex-currentIndex+1);
+
+              --maxIndex;
+              --currentIndex;
             }
             else {
-              buf[maxIndex] = 0;
+              --maxIndex;
+              --currentIndex;
+
+              buf[currentIndex] = 0;
             }
 
-            --maxIndex;
-            --currentIndex;
             printf("%c", 20);
           }
         } break;
@@ -83,7 +56,8 @@
         case 29: {  /* right */
           if(currentIndex < maxIndex) {
             ++currentIndex;
-            printf("%c", c);
+
+            printf("%c", 29);
           }
         } break;
 
@@ -94,7 +68,7 @@
 
           *ws = strdup(buf);
 
-          printf("%c", c);
+          printf("%c", 13);
           return 1;
         } break;
 
@@ -111,24 +85,19 @@
             if(currentIndex != maxIndex) {
               if(maxIndex < 80) {
                 memmove(&(buf[currentIndex+1]), &(buf[currentIndex]), maxIndex-currentIndex);
-                ++maxIndex;
-
                 buf[currentIndex] = c;
                 printf("%c%c", 148, c);
+
+                ++maxIndex;
                 ++currentIndex;
               }
             }
-            else {
-              if(currentIndex < 80) {
-                buf[currentIndex] = c;
-                printf("%c", c);
+            else if(currentIndex < 80) {
+              buf[currentIndex] = c;
+              printf("%c", c);
 
-                ++currentIndex;
-
-                if(currentIndex > maxIndex) {
-                  maxIndex = currentIndex;
-                }
-              }
+              ++currentIndex;
+              ++maxIndex;
             }
           }
           /*
@@ -158,7 +127,7 @@ int d_fgets(char** ws, FILE* stream) {
 
   #ifdef __CC65__
     if(stream == stdin) {
-      return d_fgets2(ws, stream);
+      return d_fgets2(ws);
     }
   #endif
 
@@ -227,6 +196,10 @@ int d_fgets(char** ws, FILE* stream) {
       /* ensure null termination of the string */
       newWs[totalLength-1] = '\0';
 
+      if(newWs[totalLength-2] == '\r') {
+        newWs[totalLength-2] == '\0';
+      }
+
       /* set the output string pointer and return true */
       if(*ws) {
         free(*ws);
@@ -259,127 +232,409 @@ int d_fgets(char** ws, FILE* stream) {
   return 0;
 }
 
-void main(void) {
-  char * textLine = NULL;
-  FILE * readFrom;
+int mygetch(void) {
   int c;
+  char* temp = NULL;
 
-  fputs(
-    "(w)rite,\n"
-    "(r)ead or \n"
-    "(d)elete file?\n",
-    stdout
+  d_fgets(&temp, stdin);
+  c = temp[0];
+  freeAndZero(temp);
+
+  return c;
+}
+
+FILE * readFrom;
+FILE * writeTo;
+char * newLine = NULL;
+char * oldLine = NULL;
+int firstLine = 1;
+
+void insertLines(void) {
+  fprintf(stdout,
+    "Enter lines now.\n"
+    "First character is ignored.\n"
+    "Enter empty string to finish.\n"
   );
 
   do {
-    switch(getch()) {
-      case 'w':
-      case 'W': {
-        #ifdef __CC65__
-          kbrepeat(KBREPEAT_NONE);
-          cursor(1);
-        #endif
+    d_fgets(&newLine, stdin);
 
-        fputs("filename to write to?\n", stdout);
+    if(strcmp("", newLine) == 0) {
+      freeAndZero(newLine);
+      return;
+    }
 
-        d_fgets(&textLine, stdin);
+    if(firstLine == 1) {
+      fprintf(writeTo, "%s", newLine + 1);
+      firstLine = 0;
+    }
+    else {
+      fprintf(writeTo, "\n%s", newLine + 1);
+    }
+  } while(1);
+}
 
-        #ifdef __CC65__
-          changeDrive(textLine);
-        #endif
+void printHelp(int mode) {
+  switch(mode) {
+    case 0: {
+      fprintf(stdout,
+        "commands:\n"
+        "(r)ead file\n"
+        "(w)rite file\n"
+        "(a)mend file\n"
+        "(d)elete file\n"
+#ifdef __CC65__
+        "re(n)name file\n"
+        "(c)hange directory\n"
+        "(l)ist files\n"
+#endif
+        "(h)elp\n"
+        "(q)uit\n"
+      );
+    } break;
 
-        if((readFrom = fopen(textLine, "wb")) == NULL) {
-          fputs("could not open file\n", stdout);
-          free(textLine);
-          return;
-        }
+    case 1: {
+      fprintf(stdout,
+        "commands:\n"
+        "(n)ext line (default)\n"
+        "(s)kip line\n"
+        "(i)nsert lines\n"
+        "(a)ppend rest of old file\n"
+        "(h)elp\n"
+        "(q)uit\n"
+      );
+    } break;
 
-        fputs(
-          "Enter lines now.\n"
-          "First character is ignored.\n"
-          "Enter empty string to finish.\n",
-          stdout
-        );
+    case 2: {
+      fprintf(stdout,
+        "commands:\n"
+        "(i)nsert lines\n"
+        "(h)elp\n"
+        "(q)uit\n"
+      );
+    } break;
+  }
+}
 
-        do {
-          d_fgets(&textLine, stdin);
+int edit(void) {
+  int c;
+  int hasLine = 1;
 
-          if(strcmp("", textLine) == 0) {
-            fprintf(readFrom, "\x1a");
+  do {
+    fprintf(stdout, "? ");
 
-            free(textLine);
+    switch(mygetch()) {
+      case 'h':
+      case 'H': {
+        printHelp(0);
+      } break;
 
-            fclose(readFrom);
+      case 'q':
+      case 'Q': {
+        return 0;
+      } break;
 
-            return;
+      case 'a':
+      case 'A': {
+        {
+          firstLine = 1;
+
+          fprintf(stdout, "old filename?\n");
+          d_fgets(&oldLine, stdin);
+
+          if(strcmp("", oldLine) == 0) {
+            freeAndZero(oldLine);
+            return 1;
           }
 
-          fprintf(readFrom, "%s\n", textLine + 1);
+          fprintf(stdout, "new filename?\n");
+          d_fgets(&newLine, stdin);
 
+          if(strcmp("", newLine) == 0) {
+            freeAndZero(newLine);
+            return 1;
+          }
+
+          if((readFrom = fopen(oldLine, "r")) == NULL) {
+            fprintf(stdout, "could not open file\n");
+            freeAndZero(oldLine);
+            return 1;
+          }
+
+          if((writeTo = fopen(newLine, "w")) == NULL) {
+            fprintf(stdout, "could not open file\n");
+            freeAndZero(newLine);
+            return 1;
+          }
+
+          freeAndZero(oldLine);
+          freeAndZero(newLine);
+
+          printHelp(1);
+        }
+
+        c = d_fgets(&oldLine, readFrom);
+
+        do {
+          if(hasLine == 0 || c == 0) {
+            fprintf(stdout, "no more lines\n");
+
+            printHelp(2);
+
+            c = 1;
+
+            do {
+              fprintf(stdout, "? ");
+              d_fgets(&newLine, stdin);
+
+              switch(newLine[0]) {
+                case 'i':
+                case 'I':
+                  insertLines();
+                case 'q':
+                case 'Q':
+                  c = 0;
+                break;
+
+                default:
+                  printHelp(2);
+                break;
+              }
+            } while(c);
+
+            #ifdef __Z88DK
+              fprintf(writeTo, "\x1a");
+            #endif
+
+            #ifdef __CC65__
+              fprintf(writeTo, "\n");
+            #endif
+
+            fclose(readFrom);
+            fclose(writeTo);
+
+            freeAndZero(newLine);
+            freeAndZero(oldLine);
+
+            printHelp(0);
+
+            return 1;
+          }
+          else {
+            fprintf(stdout, "%s\n", oldLine);
+            fprintf(stdout, "? ");
+          }
+
+          d_fgets(&newLine, stdin);
+
+          switch(newLine[0]) {
+            case 'h':
+            case 'H': {
+              printHelp(1);
+            } break;
+
+            case 's':
+            case 'S': {
+              c = d_fgets(&oldLine, readFrom);
+            } break;
+
+            case 'i':
+            case 'I': {
+              insertLines();
+            } continue;
+
+            case 'a':
+            case 'A': {
+              do {
+                switch(c) {
+                  case 1: {
+                    fprintf(writeTo, firstLine == 1 ? "%s" : "\n%s", oldLine);
+                    firstLine = 0;
+
+                    if((c = d_fgets(&oldLine, readFrom))) {
+                      fprintf(stdout, "%s\n", oldLine);
+                    }
+                  } break;
+
+                  case 2: {
+                    fprintf(writeTo, firstLine == 1 ? "%s" : "\n%s", oldLine);
+                    firstLine = 0;
+                    default:
+                    hasLine = 0;
+                  } break;
+                }
+              } while(hasLine);
+
+              freeAndZero(oldLine);
+            } break;
+
+            case 'q':
+            case 'Q': {
+              #ifdef __Z88DK
+                fprintf(writeTo, "\x1a");
+              #endif
+
+              #ifdef __CC65__
+                fprintf(writeTo, "\n");
+              #endif
+
+              fclose(readFrom);
+              fclose(writeTo);
+
+              freeAndZero(newLine);
+              freeAndZero(oldLine);
+            } return 1;
+
+            /*
+              case 'n':
+              case 'N':
+            */
+            default: {
+              fprintf(writeTo, firstLine == 1 ? "%s" : "\n%s", oldLine);
+              firstLine = 0;
+              c = d_fgets(&oldLine, readFrom);
+            } break;
+          }
         } while(1);
       } break;
+
+      case 'w':
+      case 'W': {
+        fprintf(stdout, "filename to write to?\n");
+
+        d_fgets(&newLine, stdin);
+
+        if(strcmp("", newLine) == 0) {
+          freeAndZero(newLine);
+          return 1;
+        }
+
+        if((writeTo = fopen(newLine, "w")) == NULL) {
+          fprintf(stdout, "could not open file\n");
+          freeAndZero(newLine);
+          return 1;
+        }
+
+        firstLine = 1;
+        insertLines();
+
+        #ifdef __Z88DK
+          fprintf(writeTo, "\x1a");
+        #endif
+
+        #ifdef __CC65__
+          fprintf(writeTo, "\n");
+        #endif
+
+        fclose(writeTo);
+      } return 1;
 
       case 'r':
       case 'R': {
-        #ifdef __CC65__
-          kbrepeat(KBREPEAT_NONE);
-          cursor(1);
-        #endif
+        fprintf(stdout, "filename to read from?\n");
 
-        fputs("filename to read from?\n", stdout);
+        d_fgets(&newLine, stdin);
 
-        d_fgets(&textLine, stdin);
-
-        #ifdef __CC65__
-          changeDrive(textLine);
-        #endif
-
-        if((readFrom = fopen(textLine, "rb")) == NULL) {
-          fputs("could not open file\n", stdout);
-          free(textLine);
-          return;
+        if((readFrom = fopen(newLine, "r")) == NULL) {
+          fprintf(stdout, "could not open file\n");
+          freeAndZero(newLine);
+          return 1;
         }
 
         do {
-          c = d_fgets(&textLine, readFrom);
+          c = d_fgets(&newLine, readFrom);
 
           switch(c) {
             case 1:
-              printf("%s\n", textLine);
+            case 2:
+              fprintf(stdout, "%s\n", newLine);
             break;
 
-            case 2:
-              printf("%s", textLine);
+              fprintf(stdout, "%s", newLine);
 
             default:
-              free(textLine);
+              freeAndZero(newLine);
               fclose(readFrom);
-              return;
+              return 1;
           }
         } while(1);
       } break;
 
+#ifdef __CC65__
+      case 'c':
+      case 'C': {
+        fprintf(stdout, "drive to change to?\n");
+
+        d_fgets(&newLine, stdin);
+
+        chdir(newLine);
+
+        freeAndZero(newLine);
+      } break;
+
+      case 'n':
+      case 'N': {
+        fprintf(stdout, "old filename?\n");
+        d_fgets(&oldLine, stdin);
+
+        fprintf(stdout, "new filename?\n");
+        d_fgets(&newLine, stdin);
+
+        rename(oldLine, newLine);
+        freeAndZero(newLine);
+        freeAndZero(oldLine);
+      } return 1;
+
+      case 'l':
+      case 'L': {
+        DIR *d;
+        struct dirent *dir;
+
+        if((d = opendir("."))) {
+          while ((dir = readdir(d)) != NULL) {
+            if(dir->d_name[0] == '.') {
+              if(
+                strcmp(".", dir->d_name) == 0 ||
+                strcmp("..", dir->d_name) == 0
+              ) {
+                continue;
+              }
+            }
+
+            fprintf(stdout, "%s\n", dir->d_name);
+          }
+
+          closedir(d);
+        }
+      } break;
+#endif
+
       case 'd':
       case 'D': {
-        #ifdef __CC65__
-          kbrepeat(KBREPEAT_NONE);
-          cursor(1);
-        #endif
+        fprintf(stdout, "filename to delete?\n");
+        d_fgets(&newLine, stdin);
 
-        fputs("filename to delete?\n", stdout);
+        remove(newLine);
+        freeAndZero(newLine);
+      } return 1;
 
-        d_fgets(&textLine, stdin);
-
-        #ifdef __CC65__
-          changeDrive(textLine);
-        #endif
-
-        remove(textLine);
-        free(textLine);
-      } return;
-
-      default:
-        continue;
+      default: {
+        printHelp(0);
+      } break;
     }
   } while(1);
+}
+
+void main(void) {
+  #ifdef __CC65__
+    cursor(1);
+  #endif
+
+  printHelp(0);
+
+  #ifdef __CC65__
+    kbrepeat(KBREPEAT_NONE);
+  #endif
+
+  while(edit()) {};
 }

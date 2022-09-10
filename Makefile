@@ -1,32 +1,32 @@
-all: zxedit.tap zxedit.com zxedit.d64
+all: zxedit.tap ed.com zxedit.d64
 
-zxedit.d64: zxedit.prg
-	c1541 -format diskname,id d64 zxedit.d64 -attach zxedit.d64 -write zxedit.prg zxedit
+zxedit.d64: ed.prg
+	c1541 -format diskname,id d64 zxedit.d64 -attach zxedit.d64 -write ed.prg ed
 
-zxedit.com: zxedit.c
-	zcc +cpm -DAMALLOC1 -o zxedit.com zxedit.c
+ed.com: zxedit.c
+	zcc +cpm -DAMALLOC1 -o ed.com zxedit.c
 
-zxedit.prg: zxedit.c
-	cl65 -t c64 -o zxedit.prg zxedit.c
+ed.prg: zxedit.c
+	cl65 -t c64 -o ed.prg zxedit.c
 
-zxedit.tap: zxedit plus3.bin esxdos.bin residos.bin
-	sh -c "(echo zxedit.tap > archived.txt) && (ls zxedit >> archived.txt) && (ls plus3.bin >> archived.txt) && (ls residos.bin >> archived.txt) && (ls esxdos.bin >> archived.txt) && (echo "" >> archived.txt) && (cat archived.txt | ./archiver)"
+zxedit.tap: ed edplus3.bin edesx.bin edresi.bin
+	sh -c "(echo zxedit.tap > archived.txt) && (ls ed >> archived.txt) && (ls edplus3.bin >> archived.txt) && (ls edresi.bin >> archived.txt) && (ls edesx.bin >> archived.txt) && (echo "" >> archived.txt) && (cat archived.txt | ./archiver)"
 	rm archived.txt
 
-plus3.bin: zxedit.c
+edplus3.bin: zxedit.c
 	zcc +zx -lp3 -DAMALLOC1 -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -zorg=49152 zxedit.c
-	z88dk-appmake +zx --dos --org 49152 --binfile a.bin --output plus3.bin
+	z88dk-appmake +zx --dos --org 49152 --binfile a.bin --output edplus3.bin
 
-residos.bin: zxedit.c
+edresi.bin: zxedit.c
 	zcc +zx -DRESIDOS -lp3 -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -DAMALLOC1 -zorg=49152 zxedit.c
-	z88dk-appmake +zx --dos --org 49152 --binfile a.bin --output residos.bin
+	z88dk-appmake +zx --dos --org 49152 --binfile a.bin --output edresi.bin
 
-esxdos.bin: zxedit.c
+edesx.bin: zxedit.c
 	zcc +zx -lesxdos -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -DAMALLOC1 -zorg=49152 zxedit.c
-	z88dk-appmake +zx --dos --org 49152 --binfile a.bin --output esxdos.bin
+	z88dk-appmake +zx --dos --org 49152 --binfile a.bin --output edesx.bin
 
-zxedit: zxedit2.bas
-	./zmakebas -a 10 -n zxedit -p -o zxedit zxedit2.bas
+ed: zxedit2.bas
+	./zmakebas -a 10 -n ed -p -o ed zxedit2.bas
 
 zxedit2.bin: zxedit2.asm
 	z88dk-z80asm -b zxedit2.asm
@@ -40,4 +40,4 @@ zxedit2.bas: zxedit.bin zxedit.bas
 	cat zxedit.bas >> zxedit2.bas
 
 clean:
-	rm -f zxedit2.bas zxedit.tap zxedit.com zxedit.prg zxedit.prg zxedit.d64 zxedit *.bin *.o *.inc *.map
+	rm -f zxedit2.bas ed zxedit.tap ed.com ed.prg zxedit.d64 *.bin *.o *.inc *.map
