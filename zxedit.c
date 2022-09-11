@@ -1,16 +1,15 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <dirent.h>
+#include <stdlib.h>   /* malloc, free */
+#include <string.h>   /* strlen, memmove */
 
 #define freeAndZero(p) { free(p); p = 0; }
 
 #ifdef __CC65__
-  #include <unistd.h>
-  #include <conio.h>
+  #include <dirent.h>   /* opendir, readdir, closedir */
+  #include <conio.h>    /* cgetc */
+  #include <unistd.h>   /* chdir */
 
-  /* cc65's fgets does whitespace trimming on the c64, so isn't really usable for us. so we use cgetc in a loop and build a line buffer ourselves */
+  /* cc65's fgets does whitespace trimming on the c64 version for stdin, so isn't really usable for us. so we use cgetc in a loop and build a line buffer ourselves */
   int d_fgets2(char** ws) {
     unsigned char buf[81];
     int c;
@@ -178,10 +177,10 @@ int d_fgets(char** ws, FILE* stream) {
     totalLength = potentialTotalLength;
     newWs = potentialNewWs;
 
-    /* if the last character is '\n' (ie we've reached the end of a line) then return the result */
-    if(newWs[totalLength-1] == '\x1a') {
+    /* if soft eof was found then truncate the returned match */
+    if((potentialNewWs = strchr(newWs, '\x1a')) != NULL) {
       /* ensure null termination of the string */
-      newWs[totalLength-1] = '\0';
+      potentialNewWs[0] = '\0';
 
       /* set the output string pointer and return true */
       if(*ws) {
@@ -192,7 +191,9 @@ int d_fgets(char** ws, FILE* stream) {
 
       return 2;
     }
-    else if(newWs[totalLength-1] == '\n' || newWs[totalLength-1] == '\r') {
+
+    /* if the last character is '\n' (ie we've reached the end of a line) then return the result */
+    if(newWs[totalLength-1] == '\n' || newWs[totalLength-1] == '\r') {
       /* ensure null termination of the string */
       newWs[totalLength-1] = '\0';
 
@@ -247,7 +248,8 @@ FILE * readFrom;
 FILE * writeTo;
 char * newLine = NULL;
 char * oldLine = NULL;
-int firstLine = 1;
+int firstLine;
+int c;
 
 void insertLines(void) {
   fprintf(stdout,
@@ -317,9 +319,6 @@ void printHelp(int mode) {
 }
 
 int edit(void) {
-  int c;
-  int hasLine = 1;
-
   do {
     fprintf(stdout, "? ");
 
@@ -337,8 +336,6 @@ int edit(void) {
       case 'a':
       case 'A': {
         {
-          firstLine = 1;
-
           fprintf(stdout, "old filename?\n");
           d_fgets(&oldLine, stdin);
 
@@ -373,10 +370,11 @@ int edit(void) {
           printHelp(1);
         }
 
+        firstLine = 1;
         c = d_fgets(&oldLine, readFrom);
 
         do {
-          if(hasLine == 0 || c == 0) {
+          if(c == 0) {
             fprintf(stdout, "no more lines\n");
 
             printHelp(2);
@@ -435,7 +433,7 @@ int edit(void) {
 
             case 's':
             case 'S': {
-              c = d_fgets(&oldLine, readFrom);
+              c = (c == 2) ? 0 : d_fgets(&oldLine, readFrom);
             } break;
 
             case 'i':
@@ -458,14 +456,10 @@ int edit(void) {
 
                   case 2: {
                     fprintf(writeTo, firstLine == 1 ? "%s" : "\n%s", oldLine);
-                    firstLine = 0;
-                    default:
-                    hasLine = 0;
+                    c = 0;
                   } break;
                 }
-              } while(hasLine);
-
-              freeAndZero(oldLine);
+              } while(c);
             } break;
 
             case 'q':
@@ -483,6 +477,9 @@ int edit(void) {
 
               freeAndZero(newLine);
               freeAndZero(oldLine);
+
+              printHelp(0);
+
             } return 1;
 
             /*
@@ -492,7 +489,7 @@ int edit(void) {
             default: {
               fprintf(writeTo, firstLine == 1 ? "%s" : "\n%s", oldLine);
               firstLine = 0;
-              c = d_fgets(&oldLine, readFrom);
+              c = (c == 2) ? 0 : d_fgets(&oldLine, readFrom);
             } break;
           }
         } while(1);
@@ -546,11 +543,11 @@ int edit(void) {
 
           switch(c) {
             case 1:
-            case 2:
               fprintf(stdout, "%s\n", newLine);
             break;
 
-              fprintf(stdout, "%s", newLine);
+            case 2:
+              fprintf(stdout, "%s\n", newLine);
 
             default:
               freeAndZero(newLine);
@@ -614,7 +611,13 @@ int edit(void) {
         fprintf(stdout, "filename to delete?\n");
         d_fgets(&newLine, stdin);
 
+        #if (defined(PLUS3DOS) || defined(RESIDOS))
+          c = strlen(newLine);
+          newLine[c] = -1;  // the filespec for residos and plus3dos must be terminated with 0xff
+        #endif
+
         remove(newLine);
+
         freeAndZero(newLine);
       } return 1;
 
