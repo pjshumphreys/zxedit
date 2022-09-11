@@ -5,7 +5,7 @@ RST_HOOK equ 8
 __ESXDOS_SYS_M_GETSETDRV equ 0x89
 HOOK_VERSION equ 0xfc
 
-org 0xc000
+org 0x8000
   jp getDiskIO
 
 memoryType:

@@ -21,11 +21,11 @@ ld (bankm), a
 out (c), a
 ei
 
-;memcpy the main code to c000 and above so we don't have to keep using relative jumps
+;memcpy the main code to 8000 and above so we don't have to keep using relative jumps
 ld hl, (PROG)
 ld de, dataStart+offset
 add hl, de
-ld de, 0xC000
+ld de, 0x8000
 ld bc, dataEnd-dataStart
 di
 ldir
@@ -35,33 +35,19 @@ ei
 ld hl, (PROG)
 ld de, checkmem+offset
 add hl, de
-call 0xc004 ; jp (hl)
-ld (0xc003), a ; memoryType
+call 0x8004 ; jp (hl)
+ld (0x8003), a ; memoryType
 
 ;now figure out what disk system we have
-jp 0xc000
+jp 0x8000
 
 checkmem:
-  ld bc, port1  ; the horizontal ROM switch/RAM switch I/O address
-
-  di
-  ld a, (bankm)  ; system variable that holds current switch state
-  or 23
-  ld (bankm), a  ; must keep system variable up to date (very important)
-  out (c), a
-  ei
-
-  ld a, (0xc000)
-  cp 0xc3
-  jr z, noram
-
-  ; copy the character set up into page 7 so we can print using page 7 and use page 5 for data
-  ld hl, 0x3d00  ; Pointer to the source
-  ld de, 0xe800  ; Pointer to the destination
-  ld bc, 0x2ff  ; Number of bytes to move
-  di
-  ldir
-  ei
+  ld  a,(75)
+  cp  191
+  jr  z, noram
+  ld  a,(23611)
+  and 16
+  jr  z, noram
 
   ld bc, port1  ; the horizontal ROM switch/RAM switch I/O address
 
