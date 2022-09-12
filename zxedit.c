@@ -284,12 +284,15 @@ void printHelp(int mode) {
         "(r)ead file\n"
         "(w)rite file\n"
         "(a)mend file\n"
+        "(s)ingle line read file\n"
         "(d)elete file\n"
-#ifdef __CC65__
-        "re(n)name file\n"
-        "(c)hange directory\n"
-        "(l)ist files\n"
-#endif
+
+        #ifdef __CC65__
+          "re(n)name file\n"
+          "(c)hange directory\n"
+          "(l)ist files\n"
+        #endif
+
         "(h)elp\n"
         "(q)uit\n"
       );
@@ -323,11 +326,6 @@ int edit(void) {
     fprintf(stdout, "? ");
 
     switch(mygetch()) {
-      case 'h':
-      case 'H': {
-        printHelp(0);
-      } break;
-
       case 'q':
       case 'Q': {
         return 0;
@@ -368,15 +366,14 @@ int edit(void) {
           freeAndZero(newLine);
 
           printHelp(1);
-        }
 
-        firstLine = 1;
-        c = d_fgets(&oldLine, readFrom);
+          firstLine = 1;
+          c = d_fgets(&oldLine, readFrom);
+        }
 
         do {
           if(c == 0) {
             fprintf(stdout, "no more lines\n");
-
             printHelp(2);
 
             c = 1;
@@ -557,59 +554,112 @@ int edit(void) {
         } while(1);
       } break;
 
-#ifdef __CC65__
-      case 'c':
-      case 'C': {
-        fprintf(stdout, "drive to change to?\n");
+      case 's':
+      case 'S': {
+        fprintf(stdout, "filename to read from?\n");
 
         d_fgets(&newLine, stdin);
 
-        chdir(newLine);
+        if((readFrom = fopen(newLine, "r")) == NULL) {
+          fprintf(stdout, "could not open file\n");
+          freeAndZero(newLine);
+          return 1;
+        }
 
-        freeAndZero(newLine);
-      } break;
+        fprintf(stdout,
+          "enter empty string to show\n"
+          "next line or anything else\n"
+          "to quit\n");
 
-      case 'n':
-      case 'N': {
-        fprintf(stdout, "old filename?\n");
-        d_fgets(&oldLine, stdin);
+        do {
+          c = d_fgets(&oldLine, readFrom);
 
-        fprintf(stdout, "new filename?\n");
-        d_fgets(&newLine, stdin);
+          switch(c) {
+            case 1:
+              fprintf(stdout, "%s", oldLine);
+            break;
 
-        rename(oldLine, newLine);
-        freeAndZero(newLine);
-        freeAndZero(oldLine);
-      } return 1;
+            case 2:
+              fprintf(stdout, "%s", oldLine);
 
-      case 'l':
-      case 'L': {
-        DIR *d;
-        struct dirent *dir;
-
-        if((d = opendir("."))) {
-          while ((dir = readdir(d)) != NULL) {
-            if(dir->d_name[0] == '.') {
-              if(
-                strcmp(".", dir->d_name) == 0 ||
-                strcmp("..", dir->d_name) == 0
-              ) {
-                continue;
-              }
-            }
-
-            fprintf(stdout, "%s\n", dir->d_name);
+            default:
+              freeAndZero(newLine);
+              freeAndZero(oldLine);
+              fclose(readFrom);
+              return 1;
           }
 
-          closedir(d);
-        }
+          d_fgets(&newLine, stdin);
+
+          if(strcmp("", newLine) != 0) {
+            fprintf(stdout, "\n");
+
+            freeAndZero(newLine);
+            freeAndZero(oldLine);
+            fclose(readFrom);
+            return 1;
+          }
+        } while(1);
       } break;
-#endif
+
+      #ifdef __CC65__
+        case 'c':
+        case 'C': {
+          fprintf(stdout, "drive to change to?\n");
+          d_fgets(&newLine, stdin);
+
+          chdir(newLine);
+
+          freeAndZero(newLine);
+        } break;
+
+        case 'n':
+        case 'N': {
+          fprintf(stdout, "old filename?\n");
+          d_fgets(&oldLine, stdin);
+
+          fprintf(stdout, "new filename?\n");
+          d_fgets(&newLine, stdin);
+
+          rename(oldLine, newLine);
+          freeAndZero(newLine);
+          freeAndZero(oldLine);
+        } return 1;
+
+        case 'l':
+        case 'L': {
+          DIR *d;
+          struct dirent *dir;
+
+          if((d = opendir("."))) {
+            while ((dir = readdir(d)) != NULL) {
+              if(dir->d_name[0] == '.') {
+                if(
+                  strcmp(".", dir->d_name) == 0 ||
+                  strcmp("..", dir->d_name) == 0
+                ) {
+                  continue;
+                }
+              }
+
+              fprintf(stdout, "%s\n", dir->d_name);
+            }
+
+            closedir(d);
+          }
+        } break;
+      #endif
 
       case 'd':
       case 'D': {
         fprintf(stdout, "filename to delete?\n");
         d_fgets(&newLine, stdin);
+
+        if(strcmp("", newLine) == 0) {
+          fprintf(stdout, "no filename supplied\n");
+          freeAndZero(newLine);
+          return 1;
+        }
 
         #if (defined(PLUS3DOS) || defined(RESIDOS))
           c = strlen(newLine);
