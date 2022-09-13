@@ -51,4 +51,4 @@ esxdos.tap: unarchiver.c
 	zcc +zx -lesxdos -pragma-define:CRT_ON_EXIT=0x10002 -pragma-redirect:fputc_cons=fputc_cons_rom_rst -DAMALLOC2 -o esxdos -create-app unarchiver.c
 
 clean:
-	rm -f zxedit2.bas ed ed.com ed.prg zxedit.d64 archiver esxdos plus3dos residos *.tap *.bin *.o *.inc *.map
+	rm -f zxedit.bas ed ed.com ed.prg zxedit.d64 archiver esxdos plus3dos residos *.tap *.bin *.o *.inc *.map
