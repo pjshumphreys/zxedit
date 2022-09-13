@@ -8,6 +8,7 @@
   #include <dirent.h>   /* opendir, readdir, closedir */
   #include <conio.h>    /* cgetc */
   #include <unistd.h>   /* chdir */
+  #include <errno.h>    /* _seterrno */
 
   char* __fastcall__ myfgets (char* s, unsigned size, register FILE* f)
   {
