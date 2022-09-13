@@ -26,6 +26,8 @@ zxedit.zip contains zxedit.d64
 
 ### ZX Spectrum - esxdos, such as divmmc devices
 
+Copy ed, ede.bin, edp.bin and edr.bin to the sd card, or
+
 1. Open esxdos.tap in the fuse ZX Spectrum emulator
 2. Type in `LOAD ""`. Don't press anything yet.
 3. Open zxedit.tap, then press 'q' to load the files
@@ -39,6 +41,8 @@ zxedit.zip contains zxedit.d64
 4. To run the program, type in `LOAD % "ed"`
  
 ### ZX Spectrum +3
+
+zxedit.zip contains a plus3dos disk image zxedit.dsk that contains the program, or
 
 1. Open plus3dos.tap in the fuse ZX Spectrum emulator
 2. Place a blank disk in drive A:
