@@ -10,54 +10,6 @@
   #include <unistd.h>   /* chdir */
   #include <errno.h>    /* _seterrno */
 
-  char* __fastcall__ myfgets (char* s, unsigned size, register FILE* f)
-  {
-      register char* p = s;
-      unsigned i;
-      int c;
-
-      if (size == 0) {
-          /* Invalid size */
-          return (char*) _seterrno (EINVAL);
-      }
-
-      /* Read input */
-      i = 0;
-      while (--size) {
-
-          /* Get next character */
-          if ((c = fgetc (f)) == EOF) {
-              /* Error or EOF */
-              if (i == 0) {
-                  /* EOF on first char */
-                  *p = '\0';
-                  return 0;
-              } else {
-                  /* EOF with data already read */
-                  break;
-              }
-          }
-
-          /* One char more */
-          *p = c;
-          ++p;
-          ++i;
-
-          /* Stop at end of line */
-          if ((char)c == '\r' || (char)c == '\n') {
-              break;
-          }
-      }
-
-      /* Terminate the string */
-      *p = '\0';
-
-      /* Done */
-      return s;
-  }
-
-  #define fgets myfgets
-
   /* cc65's fgets does whitespace trimming on the c64 version for stdin, so isn't really usable for us. so we use cgetc in a loop and build a line buffer ourselves */
   int d_fgets2(char** ws) {
     unsigned char buf[81];
