@@ -25,8 +25,8 @@ ede.bin: zxedit.c
 	zcc +zx -lesxdos -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -DAMALLOC1 -zorg=32768 zxedit.c
 	z88dk-appmake +zx --dos --org 32768 --binfile a.bin --output ede.bin
 
-ed: zxedit2.bas
-	./zmakebas -a 10 -n ed -p -o ed zxedit2.bas
+ed: zxedit.bas
+	./zmakebas -a 10 -n ed -p -o ed zxedit.bas
 
 zxedit2.bin: zxedit2.asm
 	z88dk-z80asm -b zxedit2.asm
@@ -34,9 +34,9 @@ zxedit2.bin: zxedit2.asm
 zxedit.bin: zxedit2.bin zxedit.asm
 	z88dk-z80asm -b zxedit.asm
 
-zxedit2.bas: zxedit.bin zxedit.bas
-	printf '10 CLEAR VAL "32767"\n20 RANDOMIZE USR VAL "\\{0xBE}23635+256*\\{0xBE}23636+51"\n30 REM' > zxedit2.bas
-	xxd -ps -u -c 100000 zxedit.bin | sed -e "s/\(..\)/\\\{0x\1\}/g" >> zxedit2.bas
+zxedit.bas: zxedit.bin
+	printf '10 CLEAR VAL "32767"\n20 RANDOMIZE USR VAL "\\{0xBE}23635+256*\\{0xBE}23636+51"\n30 REM' > zxedit.bas
+	xxd -ps -u -c 100000 zxedit.bin | sed -e "s/\(..\)/\\\{0x\1\}/g" >> zxedit.bas
 
 archiver: archiver.c
 	gcc -o archiver archiver.c
