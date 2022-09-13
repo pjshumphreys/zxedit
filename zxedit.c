@@ -9,6 +9,54 @@
   #include <conio.h>    /* cgetc */
   #include <unistd.h>   /* chdir */
 
+  char* __fastcall__ myfgets (char* s, unsigned size, register FILE* f)
+  {
+      register char* p = s;
+      unsigned i;
+      int c;
+
+      if (size == 0) {
+          /* Invalid size */
+          return (char*) _seterrno (EINVAL);
+      }
+
+      /* Read input */
+      i = 0;
+      while (--size) {
+
+          /* Get next character */
+          if ((c = fgetc (f)) == EOF) {
+              /* Error or EOF */
+              if (i == 0) {
+                  /* EOF on first char */
+                  *p = '\0';
+                  return 0;
+              } else {
+                  /* EOF with data already read */
+                  break;
+              }
+          }
+
+          /* One char more */
+          *p = c;
+          ++p;
+          ++i;
+
+          /* Stop at end of line */
+          if ((char)c == '\r' || (char)c == '\n') {
+              break;
+          }
+      }
+
+      /* Terminate the string */
+      *p = '\0';
+
+      /* Done */
+      return s;
+  }
+
+  #define fgets myfgets
+
   /* cc65's fgets does whitespace trimming on the c64 version for stdin, so isn't really usable for us. so we use cgetc in a loop and build a line buffer ourselves */
   int d_fgets2(char** ws) {
     unsigned char buf[81];
@@ -118,6 +166,7 @@ int d_fgets(char** ws, FILE* stream) {
   size_t totalLength = (size_t)0;
   size_t potentialTotalLength = (size_t)0;
   size_t bufferLength;
+  int c;
 
   /* check sanity of inputs */
   if(ws == NULL) {
@@ -150,10 +199,6 @@ int d_fgets(char** ws, FILE* stream) {
 
       /* if we've already retrieved some text */
       if(newWs != NULL) {
-
-        /* ensure null termination of the string */
-        newWs[totalLength] = '\0';
-
         /* set the output string pointer and return true */
         if(*ws) {
           free(*ws);
@@ -192,13 +237,42 @@ int d_fgets(char** ws, FILE* stream) {
       return 2;
     }
 
+    /* ensure null termination of the string */
+    newWs[totalLength] = '\0';
+
+    if(newWs[totalLength-1] == '\r') {
+      if((c = fgetc(stream)) != '\n') {
+        ungetc(c, stream);
+      }
+
+      /* ensure null termination of the string */
+      newWs[totalLength-1] = '\0';
+
+      if(newWs[totalLength-2] == '\n') {
+        newWs[totalLength-2] = '\0';
+      }
+
+      /* set the output string pointer and return true */
+      if(*ws) {
+        free(*ws);
+      }
+
+      *ws = newWs;
+
+      return 1;
+    }
+
     /* if the last character is '\n' (ie we've reached the end of a line) then return the result */
-    if(newWs[totalLength-1] == '\n' || newWs[totalLength-1] == '\r') {
+    if(newWs[totalLength-1] == '\n') {
+      if((c = fgetc(stream)) != '\r') {
+        ungetc(c, stream);
+      }
+
       /* ensure null termination of the string */
       newWs[totalLength-1] = '\0';
 
       if(newWs[totalLength-2] == '\r') {
-        newWs[totalLength-2] == '\0';
+        newWs[totalLength-2] = '\0';
       }
 
       /* set the output string pointer and return true */
@@ -214,9 +288,6 @@ int d_fgets(char** ws, FILE* stream) {
 
   /* if we've already retrieved some text */
   if(newWs != NULL) {
-    /* ensure null termination of the string */
-    newWs[totalLength] = '\0';
-
     /* set the output string point and return true */
     if(*ws) {
       free(*ws);
@@ -350,7 +421,7 @@ int edit(void) {
             return 1;
           }
 
-          if((readFrom = fopen(oldLine, "r")) == NULL) {
+          if((readFrom = fopen(oldLine, "rb")) == NULL) {
             fprintf(stdout, "could not open file\n");
             freeAndZero(oldLine);
             return 1;
@@ -529,7 +600,7 @@ int edit(void) {
 
         d_fgets(&newLine, stdin);
 
-        if((readFrom = fopen(newLine, "r")) == NULL) {
+        if((readFrom = fopen(newLine, "rb")) == NULL) {
           fprintf(stdout, "could not open file\n");
           freeAndZero(newLine);
           return 1;
@@ -560,7 +631,7 @@ int edit(void) {
 
         d_fgets(&newLine, stdin);
 
-        if((readFrom = fopen(newLine, "r")) == NULL) {
+        if((readFrom = fopen(newLine, "rb")) == NULL) {
           fprintf(stdout, "could not open file\n");
           freeAndZero(newLine);
           return 1;

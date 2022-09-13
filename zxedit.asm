@@ -1,7 +1,7 @@
 port1 equ 0x7ffd  ; address of ROM/RAM switching port in I/O map
 bankm equ 0x5b5c  ; system variable that holds the last value output to 7FFDh
 PROG equ 0x5c53
-offset equ 5
+offset equ 49
 
 ;prevent assembly code from being listed
 defb 0x0d
@@ -11,15 +11,6 @@ defb 0xff
 push af
 push de
 push hl
-
-;ensure bank 0 is selected
-ld a, (bankm)  ; Previous value of port
-and 0xf8  ; Select bank 0
-ld bc, port1
-di
-ld (bankm), a
-out (c), a
-ei
 
 ;memcpy the main code to 8000 and above so we don't have to keep using relative jumps
 ld hl, (PROG)
