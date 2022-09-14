@@ -1,4 +1,5 @@
-/* This program will be compiled to a .tap file and run on a residos enabled emulator.
+/*
+  This program will be compiled to a .tap file and run on a residos enabled emulator.
   It will read .tap blocks and convert them into files on the +3dos filesystem.
 */
 

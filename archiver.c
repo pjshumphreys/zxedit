@@ -1,5 +1,7 @@
-/* This program will write a named .tap file containing a bunch of named files cut up and converted into data blocks */
-/* It enables me to quickly copy a bunch of files into an emulated residos filesystem */
+/*
+  This program will write a named .tap file containing a bunch of named files cut up and converted into data blocks.
+  It enables me to quickly copy a bunch of files into an emulated residos filesystem
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
