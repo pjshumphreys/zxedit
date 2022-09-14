@@ -1,6 +1,6 @@
 # ZXEdit
 
-ZXEdit is a simple text editor and file management tool for the Commodore 64 and ZX Spectrum with disk systems esxdos, residos or plus3dos
+ZXEdit is a simple text editor and file management tool for the Commodore 64, CP/M and ZX Spectrum with the disk systems esxdos, residos or plus3dos
 
 ## Tools needed to compile
 
@@ -23,6 +23,10 @@ All files needed are prebuilt in zxedit.zip for convienience
 ### Commodore 64
 
 zxedit.zip contains zxedit.d64
+
+### CP/M
+
+zxedit.zip contains ed.com
 
 ### ZX Spectrum - esxdos, such as divmmc devices
 
