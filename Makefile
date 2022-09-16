@@ -1,5 +1,8 @@
 all: archiver residos.tap plus3dos.tap esxdos.tap zxedit.tap ed.com zxedit.d64
 
+zxedit: zxedit.c
+	gcc -o zxedit zxedit.c
+
 zxedit.d64: ed.prg
 	c1541 -format diskname,id d64 zxedit.d64 -attach zxedit.d64 -write ed.prg ed
 
@@ -14,15 +17,15 @@ zxedit.tap: archiver ed edp.bin ede.bin edr.bin
 	rm archived.txt
 
 edp.bin: zxedit.c
-	zcc +zx -DPLUS3DOS -lp3 -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -DAMALLOC1 -zorg=32768 zxedit.c
+	zcc +zx -DPLUS3DOS -lp3 -O0 -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -DAMALLOC1 -zorg=32768 zxedit.c
 	z88dk-appmake +zx --dos --org 32768 --binfile a.bin --output edp.bin
 
 edr.bin: zxedit.c
-	zcc +zx -DRESIDOS -lp3 -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -DAMALLOC1 -zorg=32768 zxedit.c
+	zcc +zx -DRESIDOS -lp3 -O0 -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -DAMALLOC1 -zorg=32768 zxedit.c
 	z88dk-appmake +zx --dos --org 32768 --binfile a.bin --output edr.bin
 
 ede.bin: zxedit.c
-	zcc +zx -lesxdos -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -DAMALLOC1 -zorg=32768 zxedit.c
+	zcc +zx -lesxdos -O0 -clib=ansi -pragma-define:ansicolumns=32 -pragma-define:ansifont=15616 -pragma-define:ansifont_is_packed=0 -DAMALLOC1 -zorg=32768 zxedit.c
 	z88dk-appmake +zx --dos --org 32768 --binfile a.bin --output ede.bin
 
 ed: zxedit.bas

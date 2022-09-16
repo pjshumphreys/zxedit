@@ -8,7 +8,6 @@
   #include <dirent.h>   /* opendir, readdir, closedir */
   #include <conio.h>    /* cgetc */
   #include <unistd.h>   /* chdir */
-  #include <errno.h>    /* _seterrno */
 
   /* cc65's fgets does whitespace trimming on the c64 version for stdin, so isn't really usable for us. so we use cgetc in a loop and build a line buffer ourselves */
   int d_fgets2(char** ws) {
@@ -152,6 +151,10 @@ int d_fgets(char** ws, FILE* stream) {
 
       /* if we've already retrieved some text */
       if(newWs != NULL) {
+
+        /* ensure null termination of the string */
+        newWs[totalLength] = '\0';
+
         /* set the output string pointer and return true */
         if(*ws) {
           free(*ws);
@@ -176,9 +179,12 @@ int d_fgets(char** ws, FILE* stream) {
     newWs = potentialNewWs;
 
     /* if soft eof was found then truncate the returned match */
-    if((potentialNewWs = strchr(newWs, '\x1a')) != NULL) {
+    if((potentialNewWs = strchr(newWs, '\x1a')) != NULL && stream != stdin) {
       /* ensure null termination of the string */
       potentialNewWs[0] = '\0';
+
+      /* ensure null termination of the string */
+      newWs[totalLength-1] = '\0';
 
       /* set the output string pointer and return true */
       if(*ws) {
@@ -190,20 +196,21 @@ int d_fgets(char** ws, FILE* stream) {
       return 2;
     }
 
-    /* ensure null termination of the string */
-    newWs[totalLength] = '\0';
-
+    /* if the last character is '\n' (ie we've reached the end of a line) then return the result */
     if(newWs[totalLength-1] == '\r') {
-      if((c = fgetc(stream)) != '\n') {
-        ungetc(c, stream);
+      if(stream != stdin) {
+        c = fgetc(stream);
+
+        if(c != '\n' && c != '\x1a') {
+          ungetc(c, stream);
+        }
+      }
+      else {
+        c = 1;
       }
 
       /* ensure null termination of the string */
       newWs[totalLength-1] = '\0';
-
-      if(newWs[totalLength-2] == '\n') {
-        newWs[totalLength-2] = '\0';
-      }
 
       /* set the output string pointer and return true */
       if(*ws) {
@@ -212,21 +219,23 @@ int d_fgets(char** ws, FILE* stream) {
 
       *ws = newWs;
 
-      return 1;
+      return ((c == '\x1a') ? 2 : 1);
     }
 
-    /* if the last character is '\n' (ie we've reached the end of a line) then return the result */
     if(newWs[totalLength-1] == '\n') {
-      if((c = fgetc(stream)) != '\r') {
-        ungetc(c, stream);
+      if(stream != stdin) {
+        c = fgetc(stream);
+
+        if(c != '\r' && c != '\x1a') {
+          ungetc(c, stream);
+        }
+      }
+      else {
+        c = 1;
       }
 
       /* ensure null termination of the string */
       newWs[totalLength-1] = '\0';
-
-      if(newWs[totalLength-2] == '\r') {
-        newWs[totalLength-2] = '\0';
-      }
 
       /* set the output string pointer and return true */
       if(*ws) {
@@ -235,12 +244,15 @@ int d_fgets(char** ws, FILE* stream) {
 
       *ws = newWs;
 
-      return 1;
+      return ((c == '\x1a') ? 2 : 1);
     }
   }
 
   /* if we've already retrieved some text */
   if(newWs != NULL) {
+    /* ensure null termination of the string */
+    newWs[totalLength] = '\0';
+
     /* set the output string point and return true */
     if(*ws) {
       free(*ws);
