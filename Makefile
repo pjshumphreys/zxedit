@@ -45,13 +45,13 @@ archiver: archiver.c
 	gcc -o archiver archiver.c
 
 residos.tap: unarchiver.c
-	zcc +zx -DRESIDOS -lp3 -pragma-define:CRT_ON_EXIT=0x10002 -pragma-redirect:fputc_cons=fputc_cons_rom_rst -DAMALLOC2 -o residos -create-app unarchiver.c
+	zcc +zx -DRESIDOS -lp3 -pragma-define:CRT_ON_EXIT=0x10002 -pragma-redirect:fputc_cons=fputc_cons_rom_rst -DAMALLOC -o residos -create-app unarchiver.c
 
 plus3dos.tap: unarchiver.c
-	zcc +zx -O0 -lp3 -pragma-define:CRT_ON_EXIT=0x10002 -pragma-redirect:fputc_cons=fputc_cons_rom_rst -DAMALLOC2 -o plus3dos -create-app unarchiver.c
+	zcc +zx -O0 -lp3 -pragma-define:CRT_ON_EXIT=0x10002 -pragma-redirect:fputc_cons=fputc_cons_rom_rst -DAMALLOC -o plus3dos -create-app unarchiver.c
 
 esxdos.tap: unarchiver.c
-	zcc +zx -lesxdos -pragma-define:CRT_ON_EXIT=0x10002 -pragma-redirect:fputc_cons=fputc_cons_rom_rst -DAMALLOC2 -o esxdos -create-app unarchiver.c
+	zcc +zx -lesxdos -pragma-define:CRT_ON_EXIT=0x10002 -pragma-redirect:fputc_cons=fputc_cons_rom_rst -DAMALLOC -o esxdos -create-app unarchiver.c
 
 clean:
 	rm -f zxedit.bas ed ed.com ed.prg zxedit.d64 archiver esxdos plus3dos residos *.tap *.bin *.o *.inc *.map

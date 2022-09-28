@@ -1,5 +1,4 @@
-/*
-  This program will be compiled to a .tap file and run on a residos enabled emulator.
+/* This program will be compiled to a .tap file and run on a residos enabled emulator.
   It will read .tap blocks and convert them into files on the +3dos filesystem.
 */
 
@@ -14,22 +13,26 @@
 
 uint16_t readBytes2;
 char * temp;
+char * temp2;
+char * temp3 = NULL;
+char * firstBlock;
+uint16_t * readBytes;
+int c;
+uint16_t bytesOut;
+FILE * output;
 
 int main(int argc, char *argv[]) {
-  char * temp2;
-  char * temp3 = NULL;
-  char * firstBlock;
-  uint16_t * readBytes;
-  int c;
-  uint16_t bytesOut;
+  temp = malloc(16400);
 
-  FILE * output = NULL;
+  if(temp == NULL) {
+    return 0;
+  }
+
+  output = NULL;
 
   fputs("\nChoose destination drive (A-P)\n"
         "or press any other key to use\n"
         "current drive\n", stdout);
-
-  temp = (char *)(0xBFEF);
 
   c = getchar() & 0x5f;
 
@@ -61,7 +64,7 @@ int main(int argc, char *argv[]) {
 
         if(c != 'T') {
           temp3 = malloc(strlen(temp)+3);
-          sprintf(temp3, "%c:%s", c, 0xBFEF);
+          sprintf(temp3, "%c:%s", c, temp);
         }
         else {
           temp3 = temp;
@@ -71,6 +74,7 @@ int main(int argc, char *argv[]) {
 
         if((output = fopen(temp3, "wb")) == NULL) {
           fprintf(stderr, "Couldn't write to file %s\n", temp3);
+          freeAndZero(temp);
           return 1;
         }
 
@@ -85,6 +89,8 @@ int main(int argc, char *argv[]) {
         if(output) {
           fclose(output);
         }
+
+      freeAndZero(temp);
       return 0;
     }
 
@@ -107,5 +113,6 @@ int main(int argc, char *argv[]) {
     fputs("Unpause!\n", stdout);
   } while(1);
 
+  freeAndZero(temp);
   return 0;
 }
