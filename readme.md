@@ -1,11 +1,11 @@
 # ZXEdit
 
-ZXEdit is a simple text editor and file management tool for the Commodore 64, CP/M and ZX Spectrum with the disk systems esxdos, residos or plus3dos
+ZXEdit is a simple text editor and file management tool for the Commodore 64, BBC Micro, CP/M and ZX Spectrum with the disk systems esxdos, residos or plus3dos
 
 ## Tools needed to compile
 
   - gcc (for building the included archiver tool for archiving files to .tap)
-  - z88dk
+  - z88dk (my fork from github.com/pjshumphreys/z88dk)
   - cc65 (my fork from github.com/pjshumphreys/cc65)
   - zmakebas
   - c1541 (from the VICE emulator)
@@ -23,6 +23,12 @@ All files needed are prebuilt in zxedit.zip for convienience
 ### Commodore 64
 
 zxedit.zip contains zxedit.d64
+
+### BBC Micro
+
+zxedit.zip contains $.ED.INF and $.ED wchich can be imported into a disc image using beebem.
+
+The menu option ot use if edit->import files to disk. Select $.ED.INF as the file to import.
 
 ### CP/M
 

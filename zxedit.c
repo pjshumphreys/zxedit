@@ -4,7 +4,7 @@
 
 #define freeAndZero(p) { free(p); p = 0; }
 
-#ifdef __CC65__
+#ifdef __C64__
   #include <dirent.h>   /* opendir, readdir, closedir */
   #include <conio.h>    /* cgetc */
   #include <unistd.h>   /* chdir */
@@ -125,7 +125,7 @@ int d_fgets(char** ws, FILE* stream) {
     return 0;
   }
 
-  #ifdef __CC65__
+  #ifdef __C64__
     if(stream == stdin) {
       return d_fgets2(ws);
     }
@@ -161,8 +161,20 @@ int d_fgets(char** ws, FILE* stream) {
         }
         *ws = newWs;
 
+        #ifdef __BBC__
+          if(stream == stdin) {
+            fputc('\n', stdout);
+          }
+        #endif
+
         return 2;
       }
+
+      #ifdef __BBC__
+        if(stream == stdin) {
+          fputc('\n', stdout);
+        }
+      #endif
 
       /*
         otherwise no successful allocation was made.
@@ -193,6 +205,12 @@ int d_fgets(char** ws, FILE* stream) {
 
       *ws = newWs;
 
+      #ifdef __BBC__
+        if(stream == stdin) {
+          fputc('\n', stdout);
+        }
+      #endif
+
       return 2;
     }
 
@@ -219,6 +237,12 @@ int d_fgets(char** ws, FILE* stream) {
 
       *ws = newWs;
 
+      #ifdef __BBC__
+        if(stream == stdin) {
+          fputc('\n', stdout);
+        }
+      #endif
+
       return ((c == '\x1a') ? 2 : 1);
     }
 
@@ -244,6 +268,12 @@ int d_fgets(char** ws, FILE* stream) {
 
       *ws = newWs;
 
+      #ifdef __BBC__
+        if(stream == stdin) {
+          fputc('\n', stdout);
+        }
+      #endif
+
       return ((c == '\x1a') ? 2 : 1);
     }
   }
@@ -259,8 +289,20 @@ int d_fgets(char** ws, FILE* stream) {
     }
     *ws = newWs;
 
+    #ifdef __BBC__
+      if(stream == stdin) {
+        fputc('\n', stdout);
+      }
+    #endif
+
     return 2; /* last string in the file */
   }
+
+  #ifdef __BBC__
+    if(stream == stdin) {
+      fputc('\n', stdout);
+    }
+  #endif
 
   /*
     otherwise no successful allocation was made.
@@ -323,7 +365,7 @@ void printHelp(int mode) {
         "(s)ingle line read file\n"
         "(d)elete file\n"
 
-        #ifdef __CC65__
+        #ifdef __C64__
           "re(n)name file\n"
           "(c)hange directory\n"
           "(l)ist files\n"
@@ -638,7 +680,7 @@ int edit(void) {
         } while(1);
       } break;
 
-      #ifdef __CC65__
+      #ifdef __C64__
         case 'c':
         case 'C': {
           fprintf(stdout, "drive to change to?\n");
@@ -715,13 +757,13 @@ int edit(void) {
 }
 
 void main(void) {
-  #ifdef __CC65__
+  #ifdef __C64__
     cursor(1);
   #endif
 
   printHelp(0);
 
-  #ifdef __CC65__
+  #ifdef __C64__
     kbrepeat(KBREPEAT_NONE);
   #endif
 

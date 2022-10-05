@@ -1,4 +1,13 @@
-all: archiver residos.tap plus3dos.tap esxdos.tap zxedit.tap ed.com zxedit.d64
+all: zxedit.zip
+
+zxedit.zip: zxedit.tap residos.tap plus3dos.tap esxdos.tap ed.com $$.ED $$.ED.INF zxedit.d64
+	zip zxedit.zip zxedit.tap residos.tap plus3dos.tap esxdos.tap ed.com $$.ED $$.ED.INF zxedit.d64
+
+$$.ED.INF: $$.ED
+	sh -c "printf '$$.ED      001900 001900 00%X\n' `stat -c "%s" $$.ED` > $$.ED.INF"
+
+$$.ED: zxedit.c
+	cl65 -t bbc -lbbc -o $$.ED zxedit.c
 
 zxedit: zxedit.c
 	gcc -o zxedit zxedit.c
@@ -11,6 +20,9 @@ ed.com: zxedit.c
 
 ed.prg: zxedit.c
 	cl65 -t c64 -o ed.prg zxedit.c
+
+ed.bbc: zxedit.c
+	cl65 -t bbc -lbbc -o ed.bbc zxedit.c
 
 zxedit.tap: archiver ed edp.bin ede.bin edr.bin
 	sh -c "(echo zxedit.tap > archived.txt) && (ls ed >> archived.txt) && (ls edp.bin >> archived.txt) && (ls edr.bin >> archived.txt) && (ls ede.bin >> archived.txt) && (echo "" >> archived.txt) && (cat archived.txt | ./archiver)"
@@ -54,4 +66,4 @@ esxdos.tap: unarchiver.c
 	zcc +zx -lesxdos -pragma-define:CRT_ON_EXIT=0x10002 -pragma-redirect:fputc_cons=fputc_cons_rom_rst -DAMALLOC -o esxdos -create-app unarchiver.c
 
 clean:
-	rm -f zxedit.bas ed ed.com ed.prg zxedit.d64 archiver esxdos plus3dos residos *.tap *.bin *.o *.inc *.map
+	rm -f zxedit.zip zxedit.bas ed ed.com ed.prg zxedit.d64 archiver esxdos plus3dos residos $$.ED.INF $$.ED *.tap *.bin *.o *.inc *.map
