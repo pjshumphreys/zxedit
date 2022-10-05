@@ -28,7 +28,7 @@ zxedit.zip contains zxedit.d64
 
 zxedit.zip contains `$.ED.INF` and `$.ED` wchich can be imported into a disc image using beebem.
 
-The menu option ot use if edit->import files to disk. Select $.ED.INF as the file to import.
+The menu option to use is edit->import files to disk. Select $.ED.INF as the file to import.
 
 To run the program on the beeb, type `*RUN "ED"` at the basic prompt.
 
