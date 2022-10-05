@@ -26,7 +26,7 @@ zxedit.zip contains zxedit.d64
 
 ### BBC Micro
 
-zxedit.zip contains $.ED.INF and $.ED wchich can be imported into a disc image using beebem.
+zxedit.zip contains $$.ED.INF and $$.ED wchich can be imported into a disc image using beebem.
 
 The menu option ot use if edit->import files to disk. Select $.ED.INF as the file to import.
 
